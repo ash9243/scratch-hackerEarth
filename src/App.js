@@ -9,7 +9,7 @@ export default function App() {
   const [diffY, setDiffY] = useState(0);
   const [group, setGroup] = useState([]);
 
-  const handleDragStart = (event) => {
+
     console.log("drag start ");
     let newElement = event.currentTarget.cloneNode(true);
     newElement.style.position = "absolute";
@@ -19,9 +19,21 @@ export default function App() {
     setSelectedElement(newElement);
   };
 
+  
+  const handleDragStart = (event) => {
+    console.log("drag start ");
+    let newElement = event.currentTarget.cloneNode(true);
+    newElement.style.position = "absolute";
+    newElement.addEventListener('drag')
+
+    setDiffX(event.clientX - event.currentTarget.getBoundingClientRect().left);
+    setDiffY(event.clientY - event.currentTarget.getBoundingClientRect().top);
+    setSelectedElement(newElement);
+  }
+
+
   const handleDragEnd = (event) => {
     console.log("drag end");
-    let newGroupRequired = false;
 
     let newElement = selectedElement;
 
@@ -32,79 +44,56 @@ export default function App() {
       .getElementById("MidArea")
       .querySelectorAll(".draggable");
 
-    console.log("current element left", newElement.style.left);
-    console.log("current element top", newElement.style.top);
-
-    if (elements.length === 0) {
-      newGroupRequired = true;
-    }
-
-    for (let i = 0; i < elements.length; i++) {
-      console.log("elements ", elements[0].style.left);
-      console.log("elements ", elements[0].style.top);
-
-      let overlappingElement = elements[i];
-
-      let OEBR = overlappingElement.getBoundingClientRect();
-      let OEBRLength = OEBR.bottom - OEBR.top;
-      console.log("over lapping element length ", OEBRLength);
-      console.log("oebr top ", OEBR.top);
-      console.log("oebr bottom ", OEBR.bottom);
-      console.log(
-        "top greater than",
-        parseInt(overlappingElement.style.top.replace("px", "")) +
-          OEBRLength / 2
-      );
-      console.log(
-        "top less than",
-        parseInt(overlappingElement.style.top.replace("px", "")) +
-          OEBRLength +
-          OEBRLength
-      );
-      console.log(
-        "current element top ",
-        parseInt(newElement.style.top.replace("px", ""))
-      );
-
-      if (
-        parseInt(newElement.style.top.replace("px", "")) >
-          parseInt(overlappingElement.style.top.replace("px", "")) +
-            OEBRLength / 2 &&
-        parseInt(newElement.style.top.replace("px", "")) <
-          parseInt(overlappingElement.style.top.replace("px", "")) +
-            OEBRLength +
-            OEBRLength
-      ) {
-        console.log("attach on bottom");
-        newElement.style.top =
-          parseInt(overlappingElement.style.top.replace("px", "")) +
-          OEBRLength +
-          "px";
-        newElement.style.left = overlappingElement.style.left;
-      } else if (
-        parseInt(newElement.style.top.replace("px", "")) >
-          parseInt(overlappingElement.style.top.replace("px", "")) +
-            OEBRLength &&
-        parseInt(newElement.style.top.replace("px", "")) <
-          parseInt(overlappingElement.style.top.replace("px", "")) +
-            OEBRLength / 2
-      ) {
-        console.log("attach on top");
-        newElement.style.top =
-          parseInt(overlappingElement.style.top.replace("px", "")) -
-          OEBRLength +
-          "px";
-        newElement.style.left = overlappingElement.style.left;
-      }
-    }
-
-    if (newGroupRequired === true) {
-      let newGroup = [];
-      newGroup.add(newElement);
-      setGroup(newGroup);
-    }
+    console.log("elememnts is ", elements);
 
     document.getElementById("MidArea").appendChild(newElement);
+
+    newElement.classList.remove("my-2");
+    if (elements.length === 0) {
+      console.log("first element to be added");
+      let group1 = [];
+      group1.push({
+        dragElement: newElement,
+        group: 1,
+        position: 1
+      });
+      setGroup(group1);
+    } else {
+      //attach on top or bottom
+      //add to existing group
+      for (let i = 0; i < elements.length; i++) {
+        let currentElement = newElement;
+        let existingElement = elements[i];
+
+        let CET = currentElement.getBoundingClientRect().top;
+        let CEL = currentElement.getBoundingClientRect().left;
+        let CEB = currentElement.getBoundingClientRect().bottom;
+
+        let EET = existingElement.getBoundingClientRect().top;
+        let EEL = existingElement.getBoundingClientRect().left;
+        let EEB = existingElement.getBoundingClientRect().bottom;
+
+        let elHeight = currentElement.getBoundingClientRect().height;
+        let elWidth = currentElement.getBoundingClientRect().width;
+
+        // check if in range of x direction
+        if (CEL > EEL - 0.25 * elWidth && CEL < EEL + 1.25 * elWidth) {
+          // check if in range for bottom attachment
+          if (CET > EET + 0.5 * elHeight && CET < EET + 1.5 * elHeight) {
+            newElement.style.top = EEB + 1 + "px";
+            newElement.style.left = EEL + "px";
+          }
+
+          // check if in range for top attachment
+          if (CEB > EET - 0.5 * elHeight && CEB < EET + 0.5 * elHeight) {
+            newElement.style.top = EET - elHeight - 1 + "px";
+            newElement.style.left = EEL + "px";
+          }
+        }
+      }
+      //elsewhere
+      //create new group and add to it
+    }
   };
 
   const handleDragOver = () => {
